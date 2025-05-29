@@ -9,7 +9,12 @@ import {
   FaBars,
   FaTimes,
   FaSignOutAlt,
-  FaClinicMedical
+  FaClinicMedical,
+  FaClipboardList,
+  FaStethoscope,
+  FaTachometerAlt,
+  FaUsers,
+  FaPrint
 } from "react-icons/fa";
 import { toast } from 'react-toastify';
 
@@ -228,30 +233,45 @@ const Sidebar = ({ onLogout }) => {
         <div>
           <Logo>
             <FaClinicMedical />
-            <span>MedPortal</span>
+            <span>ER Dept</span>
           </Logo>
           
           <SidebarList>
             <SidebarItem active={location.pathname === `${baseUrl}/PatientRegistrationForm`}>
               <Link to={`${baseUrl}/PatientRegistrationForm`} onClick={closeSidebar}>
-                <FaFileInvoiceDollar />
+                <FaClipboardList />
                 Registration 
               </Link>
             </SidebarItem>
             
             <SidebarItem active={location.pathname === `${baseUrl}/PatientForm`}>
               <Link to={`${baseUrl}/PatientForm`} onClick={closeSidebar}>
-                <FaUserPlus />
+                <FaStethoscope />
                 Casualty Form
               </Link>
             </SidebarItem>
             
             <SidebarItem active={location.pathname === `${baseUrl}/Dashboard`}>
               <Link to={`${baseUrl}/Dashboard`} onClick={closeSidebar}>
-                <FaChartLine />
+                <FaTachometerAlt />
                 Dashboard
               </Link>
             </SidebarItem>
+
+            <SidebarItem active={location.pathname === `${baseUrl}/PatientList`}>
+              <Link to={`${baseUrl}/PatientList`} onClick={closeSidebar}>
+                <FaUsers />
+               PatientList
+              </Link>
+            </SidebarItem>
+
+            <SidebarItem active={location.pathname === `${baseUrl}/PrintBill`}>
+              <Link to={`${baseUrl}/PrintBill`} onClick={closeSidebar}>
+                <FaPrint />
+               PrintBill
+              </Link>
+            </SidebarItem>
+
           </SidebarList>
         </div>
         
@@ -263,7 +283,7 @@ const Sidebar = ({ onLogout }) => {
               Logout
             </LogoutButton>
           </LogoutContainer>
-          <Footer>© {new Date().getFullYear()} MedPortal</Footer>
+          <Footer>© {new Date().getFullYear()} ER Dept</Footer>
         </div>
       </SidebarContainer>
     </>

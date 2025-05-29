@@ -6,6 +6,8 @@ import Dashboard from "./Components/Dashboard";
 import PatientRegistrationForm from "./Components/PatientRegistrationForm";
 import EmployeeRegister from "./Components/EmployeeRegister";
 import Login from "./Components/Login"; // Login component
+import PatientList from "./Components/PatientList";
+import PrintBill from "./Components/PrintBill";
 
 // Wrapper for conditional Sidebar display
 const AppContent = () => {
@@ -27,6 +29,8 @@ const AppContent = () => {
           <Route path={`${baseUrl}/Dashboard`} element={ <Dashboard />}/>
           <Route path={`${baseUrl}/PatientRegistrationForm`} element={ <PatientRegistrationForm /> } />
           <Route path={`${baseUrl}/EmployeeRegister`} element={<EmployeeRegister />} />
+          <Route path={`${baseUrl}/PatientList`} element={<PatientList />} />
+          <Route path={`${baseUrl}/PrintBill`} element={<PrintBill />} />
         </Routes>
       </div>
     </>

@@ -6,7 +6,7 @@ import { FaDownload } from 'react-icons/fa';
 // Styled Components
 const Container = styled.div`
   padding: 2rem;
-  max-width: 1000px;
+  max-width: 1200px;
   margin: auto;
 `;
 
@@ -65,6 +65,13 @@ const NoData = styled.tr`
   }
 `;
 
+const ProcedureCell = styled.td`
+  max-width: 300px;
+  word-wrap: break-word;
+  font-size: 0.9rem;
+  line-height: 1.4;
+`;
+
 const PatientList = () => {
   const casualtyBaseUrl = import.meta.env.VITE_BACKEND_CASUALTY_BASE_URL;
   const [patients, setPatients] = useState([]);
@@ -91,13 +98,60 @@ const PatientList = () => {
     }
   };
 
+  // Helper function to format procedures for display
+  const formatProceduresForDisplay = (procedures) => {
+    if (!procedures) return 'N/A';
+    
+    try {
+      // If it's already a string, try to parse it
+      const procedureData = typeof procedures === 'string' ? JSON.parse(procedures) : procedures;
+      
+      // If it's an array, format it as readable text
+      if (Array.isArray(procedureData)) {
+        return procedureData.map(proc => 
+          `${proc.procedure || 'Unknown'} - Qty: ${proc.qty || 0}, Rate: ₹${proc.rate || 0}, Total: ₹${proc.total || 0}`
+        ).join('\n');
+      }
+      
+      // If it's an object, format it
+      return `${procedureData.procedure || 'Unknown'} - Qty: ${procedureData.qty || 0}, Rate: ₹${procedureData.rate || 0}, Total: ₹${procedureData.total || 0}`;
+    } catch (error) {
+      // If parsing fails, return as string
+      return procedures.toString();
+    }
+  };
+
+  // Helper function to format procedures for CSV export
+  const formatProceduresForCSV = (procedures) => {
+    if (!procedures) return 'N/A';
+    
+    try {
+      const procedureData = typeof procedures === 'string' ? JSON.parse(procedures) : procedures;
+      
+      if (Array.isArray(procedureData)) {
+        return procedureData.map(proc => 
+          `${proc.procedure || 'Unknown'} (Qty: ${proc.qty || 0}, Rate: ${proc.rate || 0}, Total: ${proc.total || 0})`
+        ).join('; ');
+      }
+      
+      return JSON.stringify(procedureData);
+    } catch (error) {
+      return procedures.toString().replace(/,/g, ';'); // Replace commas to avoid CSV issues
+    }
+  };
+
   const handleExport = () => {
     const csvContent = [
-      ['Patient Name', 'ER Number', 'Total Amount'],
-      ...patients.map(p => [p.name, p.billNumber, p.totalAmount]),
-      ['', 'Total', total]
+      ['Patient Name', 'Bill Number', 'Procedures', 'Total Amount'],
+      ...patients.map(p => [
+        p.name,
+        p.billNumber,
+        formatProceduresForCSV(p.procedures || p.billType), // Use procedures if available, fallback to billType
+        p.totalAmount
+      ]),
+      ['', '', 'Total', total]
     ]
-      .map(row => row.join(','))
+      .map(row => row.map(cell => `"${cell}"`).join(',')) // Wrap each cell in quotes for CSV safety
       .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -122,16 +176,15 @@ const PatientList = () => {
         />
       </Header>
 
-<ButtonRow>
-  <button
-    onClick={handleExport}
-    title="Export to Excel"
-    style={{ marginLeft: "auto", marginRight: "10px" }}
-  >
-    <FaDownload />
-  </button>
-</ButtonRow>
-
+      <ButtonRow>
+        <button
+          onClick={handleExport}
+          title="Export to CSV"
+          style={{ marginLeft: "auto", marginRight: "10px" }}
+        >
+          <FaDownload />
+        </button>
+      </ButtonRow>
 
       <TableContainer>
         <StyledTable>
@@ -139,6 +192,7 @@ const PatientList = () => {
             <tr>
               <th>Patient Name</th>
               <th>Bill Number</th>
+              <th>Procedures</th>
               <th>Total Amount</th>
             </tr>
           </thead>
@@ -148,18 +202,23 @@ const PatientList = () => {
                 <tr key={patient.id}>
                   <td>{patient.name}</td>
                   <td>{patient.billNumber}</td>
+                  <ProcedureCell>
+                    <div style={{ whiteSpace: 'pre-line' }}>
+                      {formatProceduresForDisplay(patient.procedures || patient.billType)}
+                    </div>
+                  </ProcedureCell>
                   <td>{patient.totalAmount}</td>
                 </tr>
               ))
             ) : (
               <NoData>
-                <td colSpan="3">No data available for this date</td>
+                <td colSpan="4">No data available for this date</td>
               </NoData>
             )}
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan="2" style={{ textAlign: 'right' }}>Total</td>
+              <td colSpan="3" style={{ textAlign: 'right' }}>Total</td>
               <td style={{ color: 'green' }}>{total}</td>
             </tr>
           </tfoot>
