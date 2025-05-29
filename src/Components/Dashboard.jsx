@@ -418,7 +418,7 @@ const Dashboard = () => {
     <Container>
       <DashboardWrapper>
         <Header>
-          <Title>Patient Dashboard</Title>
+          <h2>ER Patient Dashboard</h2>
           <Subtitle>Monitor patient statistics and billing information</Subtitle>
 
           <DatePickerWrapper>

@@ -437,7 +437,7 @@ const handleQuantityChange = (index, newQuantity) => {
   return (
     <Container>
       <ToastContainer position="top-right" autoClose={3000} />
-      <Header>Casualty Form</Header>
+      <h2>ER Form</h2>
       
       <FormGrid>
         <InputGroup>
