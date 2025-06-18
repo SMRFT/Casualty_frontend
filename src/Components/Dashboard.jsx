@@ -1,9 +1,10 @@
-"use client"
+import axios from 'axios';
 
 import { useState, useEffect } from "react"
 import styled from "styled-components"
 import { Calendar, Users, FileText, UserCheck, DollarSign } from "lucide-react"
 import Table from "react-bootstrap/Table"
+
 
 // Styled Components
 const Container = styled.div`
@@ -266,6 +267,16 @@ const NoDataCard = styled.div`
   grid-column: 1 / -1;
 `
 
+const ErrorCard = styled.div`
+  background: #fed7d7;
+  border: 1px solid #feb2b2;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #c53030;
+  text-align: center;
+`
+
 const LoadingSpinner = styled.div`
   display: inline-block;
   width: 20px;
@@ -281,13 +292,52 @@ const LoadingSpinner = styled.div`
 `
 
 const Dashboard = () => {
-  const casualtyBaseUrl = import.meta.env?.VITE_BACKEND_CASUALTY_BASE_URL || "https://api.example.com/"
+
+    const apiRequest = async (url, method = 'GET', data = null, headers = {}) => {
+  try {
+    const token = localStorage.getItem("access_token");
+
+    const defaultHeaders = {
+      "Content-Type": "application/json",
+      "Authorization": token,
+    };
+
+    const config = {
+      method,
+      url,
+      headers: { ...defaultHeaders, ...headers },
+      validateStatus: () => true,
+    };
+
+    if (data && (method === 'POST' || method === 'PUT' || method === 'GET' )) {
+      config.data = data;
+    }
+
+    const response = await axios(config);
+
+    if (response.status === 200) {
+      return { success: true, data: response.data };
+    } else if (response.status === 400) {
+      return { success: false, error: 'Invalid data sent to server.', status: 400, data: response.data };
+    } else if (response.status === 401) {
+      return { success: false, error: 'Session expired. Please log in again.', status: 401, data: response.data };
+    } else {
+      return { success: false, error: 'Something went wrong. Try again.', status: response.status, data: response.data };
+    }
+  } catch (error) {
+    console.error('Network or unexpected error:', error);
+    return { success: false, error: 'Network error or unexpected issue occurred.', networkError: true };
+  }
+};
+
+  const casualtyBaseUrl = import.meta.env?.VITE_BACKEND_CASUALTY_BASE_URL 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
   const [totalPatients, setTotalPatients] = useState(0)
   const [procedureCounts, setProcedureCounts] = useState({})
   const [doctorTotals, setDoctorTotals] = useState({})
   const [totalRevenue, setTotalRevenue] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     fetchPatientData(selectedDate)
@@ -359,9 +409,16 @@ const Dashboard = () => {
 
   const fetchPatientData = async (date) => {
     setLoading(true)
+    setError(null)
+    
     try {
-      const response = await fetch(`${casualtyBaseUrl}dashboard/?billDate=${date}`)
-      const patients = await response.json()
+      const response = await apiRequest(`${casualtyBaseUrl}dashboard/?billDate=${date}`);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch patient data');
+      }
+
+      const patients = response.data;
 
       setTotalPatients(patients.length)
       const { procedureCounts, doctorTotals, totalRevenue } = parseBillTypeData(patients)
@@ -370,24 +427,13 @@ const Dashboard = () => {
       setTotalRevenue(totalRevenue)
     } catch (error) {
       console.error("Error fetching patient data:", error)
-      // Mock data for demonstration
-      const mockProcedures = {
-        "I&D (INCISION AND DRAINAGE)": 1,
-        "FNAC BIOPSY": 1,
-        "ASCITIC TAPPING": 1,
-        CONSULTATION: 5,
-        "EMERGENCY TREATMENT": 3,
-      }
-      const mockDoctors = {
-        "Dr. Prabhu Sankar": 2400,
-        "Dr. Rajesh Kumar": 1800,
-        "Dr. Priya Sharma": 3200,
-        "Dr. Arun Patel": 1500,
-      }
-      setProcedureCounts(mockProcedures)
-      setDoctorTotals(mockDoctors)
-      setTotalPatients(Object.values(mockProcedures).reduce((a, b) => a + b, 0))
-      setTotalRevenue(Object.values(mockDoctors).reduce((a, b) => a + b, 0))
+      setError(error.message || 'Failed to fetch patient data')
+      
+      // Reset all data to empty/zero state
+      setTotalPatients(0)
+      setProcedureCounts({})
+      setDoctorTotals({})
+      setTotalRevenue(0)
     } finally {
       setLoading(false)
     }
@@ -432,6 +478,12 @@ const Dashboard = () => {
               max={new Date().toISOString().split("T")[0]}
             />
           </DatePickerWrapper>
+          
+          {error && (
+            <ErrorCard>
+              Error: {error}
+            </ErrorCard>
+          )}
         </Header>
 
         <StatsGrid>
@@ -492,6 +544,10 @@ const Dashboard = () => {
               <NoDataCard>
                 <LoadingSpinner /> Loading...
               </NoDataCard>
+            ) : error ? (
+              <NoDataCard>
+                Unable to load procedure data. Please try again.
+              </NoDataCard>
             ) : Object.keys(procedureCounts).length === 0 ? (
               <NoDataCard>No procedures available for the selected date.</NoDataCard>
             ) : (
@@ -530,6 +586,10 @@ const Dashboard = () => {
             {loading ? (
               <NoDataCard>
                 <LoadingSpinner /> Loading...
+              </NoDataCard>
+            ) : error ? (
+              <NoDataCard>
+                Unable to load doctor data. Please try again.
               </NoDataCard>
             ) : Object.keys(doctorTotals).length === 0 ? (
               <NoDataCard>No doctor data available for the selected date.</NoDataCard>

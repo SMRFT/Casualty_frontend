@@ -3,7 +3,7 @@ import axios from 'axios';
 import styled from 'styled-components';
 import { FaDownload } from 'react-icons/fa'; 
 
-// Styled Components
+// Styled Components (keep them as they are)
 const Container = styled.div`
   padding: 2rem;
   max-width: 1200px;
@@ -77,14 +77,62 @@ const PatientList = () => {
   const [patients, setPatients] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false); // Add loading state
+  const [error, setError] = useState(null); // Add error state
+
+  // apiRequest function - copied directly from Dashboard.jsx
+  const apiRequest = async (url, method = 'GET', data = null, headers = {}) => {
+    try {
+      const token = localStorage.getItem("access_token");
+
+      const defaultHeaders = {
+        "Content-Type": "application/json",
+        "Authorization": token,
+      };
+
+      const config = {
+        method,
+        url,
+        headers: { ...defaultHeaders, ...headers },
+        validateStatus: () => true, // Ensure Axios doesn't throw for non-2xx codes
+      };
+
+      if (data && (method === 'POST' || method === 'PUT' || method === 'GET')) {
+        config.data = data;
+      }
+
+      const response = await axios(config);
+
+      if (response.status === 200) {
+        return { success: true, data: response.data };
+      } else if (response.status === 400) {
+        return { success: false, error: 'Invalid data sent to server.', status: 400, data: response.data };
+      } else if (response.status === 401) {
+        return { success: false, error: 'Session expired. Please log in again.', status: 401, data: response.data };
+      } else {
+        return { success: false, error: 'Something went wrong. Try again.', status: response.status, data: response.data };
+      }
+    } catch (error) {
+      console.error('Network or unexpected error:', error);
+      return { success: false, error: 'Network error or unexpected issue occurred.', networkError: true };
+    }
+  };
 
   useEffect(() => {
     fetchPatients(selectedDate);
   }, [selectedDate]);
 
   const fetchPatients = async (date) => {
+    setLoading(true); // Set loading to true before fetching
+    setError(null); // Clear previous errors
     try {
-      const response = await axios.get(`${casualtyBaseUrl}patients-by-date/?billDate=${date}`);
+      // Use apiRequest instead of direct axios call
+      const response = await apiRequest(`${casualtyBaseUrl}patients-by-date/?billDate=${date}`);
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch patient data');
+      }
+
       setPatients(response.data);
 
       const totalAmount = response.data.reduce((sum, p) => {
@@ -94,7 +142,12 @@ const PatientList = () => {
 
       setTotal(totalAmount);
     } catch (err) {
-      console.error('Error fetching patients:', err);
+      console.error('Error fetching patients:', err.message);
+      setError(err.message || 'Failed to fetch patient data'); // Set the error state
+      setPatients([]); // Clear patients on error
+      setTotal(0); // Reset total on error
+    } finally {
+      setLoading(false); // Set loading to false after fetch (success or error)
     }
   };
 
@@ -114,7 +167,7 @@ const PatientList = () => {
       }
       
       // If it's an object, format it
-      return `${procedureData.procedure || 'Unknown'} - Qty: ${procedureData.qty || 0}, Rate: ₹${procedureData.rate || 0}, Total: ₹${procedureData.total || 0}`;
+      return `${procedureData.procedure || 'Unknown'} - Qty: ${procedureData.qty || 0}, Rate: ₹${procedureData.rate || 0}, Total: ₹₹${procedureData.total || 0}`;
     } catch (error) {
       // If parsing fails, return as string
       return procedures.toString();
@@ -186,6 +239,13 @@ const PatientList = () => {
         </button>
       </ButtonRow>
 
+      {/* Display error message if there's an error */}
+      {error && (
+        <div style={{ color: 'red', textAlign: 'center', marginBottom: '1rem' }}>
+          Error: {error}
+        </div>
+      )}
+
       <TableContainer>
         <StyledTable>
           <thead>
@@ -197,7 +257,11 @@ const PatientList = () => {
             </tr>
           </thead>
           <tbody>
-            {patients.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan="4" style={{ textAlign: 'center' }}>Loading patient data...</td>
+              </tr>
+            ) : patients.length > 0 ? (
               patients.map((patient) => (
                 <tr key={patient.id}>
                   <td>{patient.name}</td>

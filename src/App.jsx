@@ -5,9 +5,10 @@ import GlobalStyle from "./Components/GlobalStyle";
 import Dashboard from "./Components/Dashboard";
 import PatientRegistrationForm from "./Components/PatientRegistrationForm";
 import EmployeeRegister from "./Components/EmployeeRegister";
-import Login from "./Components/Login"; // Login component
+
 import PatientList from "./Components/PatientList";
 import PrintBill from "./Components/PrintBill";
+import DailyPatientList from "./Components/DailyPatientList";
 
 // Wrapper for conditional Sidebar display
 const AppContent = () => {
@@ -23,14 +24,14 @@ const AppContent = () => {
       {showSidebar && <Sidebar />}
       <div style={{ marginLeft: showSidebar && window.innerWidth > 768 ? "200px" : "0", padding: "20px" }}>
         <Routes>
-          <Route path={`${baseUrl}/`} element={<Navigate to={`${baseUrl}/login`} />} />
-          <Route path={`${baseUrl}/login`} element={<Login />} />
+         
           <Route path={`${baseUrl}/PatientForm`} element={ <PatientForm /> } />
           <Route path={`${baseUrl}/Dashboard`} element={ <Dashboard />}/>
           <Route path={`${baseUrl}/PatientRegistrationForm`} element={ <PatientRegistrationForm /> } />
           <Route path={`${baseUrl}/EmployeeRegister`} element={<EmployeeRegister />} />
           <Route path={`${baseUrl}/PatientList`} element={<PatientList />} />
           <Route path={`${baseUrl}/PrintBill`} element={<PrintBill />} />
+           <Route path={`${baseUrl}/DailyPatientList`} element={<DailyPatientList />} />
         </Routes>
       </div>
     </>

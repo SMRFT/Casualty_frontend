@@ -1,10 +1,11 @@
 // EmployeeRegister.jsx
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import axios from 'axios';
+import axios from 'axios'; // axios is still needed for the apiRequest function itself
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// --- Styled Components (remain unchanged) ---
 const Container = styled.div`
   width: 400px;
   margin: 50px auto;
@@ -55,6 +56,7 @@ const Button = styled.button`
   }
 `;
 
+// --- EmployeeRegister Component ---
 const EmployeeRegister = () => {
   const [formData, setFormData] = useState({
     empid: '',
@@ -65,6 +67,44 @@ const EmployeeRegister = () => {
     confirmPassword: ''
   });
   const casualtyBaseUrl = import.meta.env.VITE_BACKEND_CASUALTY_BASE_URL;
+
+  // apiRequest function - copied directly from Dashboard.jsx
+  const apiRequest = async (url, method = 'GET', data = null, headers = {}) => {
+    try {
+      const token = localStorage.getItem("access_token");
+
+      const defaultHeaders = {
+        "Content-Type": "application/json",
+        "Authorization": token,
+      };
+
+      const config = {
+        method,
+        url,
+        headers: { ...defaultHeaders, ...headers },
+        validateStatus: () => true, // Ensure Axios doesn't throw for non-2xx codes
+      };
+
+      if (data && (method === 'POST' || method === 'PUT' || method === 'GET')) {
+        config.data = data;
+      }
+
+      const response = await axios(config);
+
+      if (response.status === 200) {
+        return { success: true, data: response.data };
+      } else if (response.status === 400) {
+        return { success: false, error: 'Invalid data sent to server.', status: 400, data: response.data };
+      } else if (response.status === 401) {
+        return { success: false, error: 'Session expired. Please log in again.', status: 401, data: response.data };
+      } else {
+        return { success: false, error: 'Something went wrong. Try again.', status: response.status, data: response.data };
+      }
+    } catch (error) {
+      console.error('Network or unexpected error:', error);
+      return { success: false, error: 'Network error or unexpected issue occurred.', networkError: true };
+    }
+  };
   
   const handleChange = (e) => {
     setFormData({...formData, [e.target.name]: e.target.value});
@@ -76,13 +116,22 @@ const EmployeeRegister = () => {
       toast.error('Passwords do not match');
       return;
     }
+
     try {
-      await axios.post(`${casualtyBaseUrl}employeeregister/`, formData);
-      toast.success('Employee registered successfully!');
-      setFormData({ empid: '', name: '', role: '', email: '', password: '', confirmPassword: '' });
+      // Use apiRequest for the POST call
+      const response = await apiRequest(`${casualtyBaseUrl}employeeregister/`, 'POST', formData);
+
+      if (response.success) {
+        toast.success('Employee registered successfully!');
+        setFormData({ empid: '', name: '', role: '', email: '', password: '', confirmPassword: '' });
+      } else {
+        // Handle specific error messages from the backend if available, or a generic one
+        toast.error(response.error || 'Registration failed');
+        console.error('API Error:', response.data || response.error);
+      }
     } catch (error) {
-      toast.error('Registration failed');
-      console.error(error);
+      toast.error('Network error or unexpected issue occurred during registration.');
+      console.error('Catch block error:', error);
     }
   };
 

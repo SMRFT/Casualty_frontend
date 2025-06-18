@@ -1,6 +1,6 @@
 import { useState } from "react"
 import styled from "styled-components"
-import { useNavigate } from "react-router-dom"
+ import axios from 'axios';
 import { Search, Plus, ChevronDown, ChevronUp, Info } from "lucide-react"
 import 'bootstrap/dist/css/bootstrap.min.css'
 import { ToastContainer, toast } from 'react-toastify'
@@ -41,7 +41,52 @@ const CollapsibleSection = ({ title, children, defaultOpen = true, icon }) => {
 }
 
 const PatientRegistrationForm = () => {
-  const navigate = useNavigate()
+
+   // apiRequest function from Dashboard/ERPatientsBilling
+  const apiRequest = async (url, method = 'GET', data = null, headers = {}) => {
+    try {
+      const token = localStorage.getItem("access_token");
+
+      const defaultHeaders = {
+        "Content-Type": "application/json", // Default to JSON, but will be overridden for FormData
+        "Authorization": token,
+      };
+
+      const config = {
+        method,
+        url,
+        headers: { ...defaultHeaders, ...headers },
+        validateStatus: () => true, // Ensure Axios doesn't throw for non-2xx codes
+      };
+
+      // Axios automatically handles FormData if you pass it directly as data
+      if (data instanceof FormData) {
+        config.data = data;
+        // Do NOT set Content-Type for FormData, Axios will set it correctly including boundary
+        delete config.headers['Content-Type'];
+      } else if (data) {
+        config.data = data;
+      }
+
+      const response = await axios(config);
+
+      if (response.status === 200) {
+        return { success: true, data: response.data };
+      } else if (response.status === 400) {
+        return { success: false, error: 'Invalid data sent to server.', status: 400, data: response.data };
+      } else if (response.status === 401) {
+        return { success: false, error: 'Session expired. Please log in again.', status: 401, data: response.data };
+      } else if (response.status === 404) {
+        return { success: false, error: 'Resource not found.', status: 404, data: response.data };
+      } else {
+        return { success: false, error: response.data?.message || 'Something went wrong. Try again.', status: response.status, data: response.data };
+      }
+    } catch (error) {
+      console.error('Network or unexpected error:', error);
+      return { success: false, error: 'Network error or unexpected issue occurred.', networkError: true };
+    }
+  };
+ 
 
   const casualtyBaseUrl = import.meta.env.VITE_BACKEND_CASUALTY_BASE_URL;
 
@@ -102,74 +147,73 @@ const PatientRegistrationForm = () => {
   }
 
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // Check if name field is filled
-    if (!patient.name.trim()) {
-      toast.error("Patient name is required!")
-      return
-    }
-
-    try {
-      // Convert the patient object to FormData
-      const formData = new FormData()
-
-      // Append all patient data to formData
-      Object.keys(patient).forEach((key) => {
-        formData.append(key, patient[key])
-      })
-
-      const response = await fetch(`${casualtyBaseUrl}patients/register/`, {
-        method: "POST",
-        body: formData,
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log("Patient Registered:", data)
-        // Show success toast notification
-        toast.success("Patient Registered Successfully!")
-        // Reset form - removed patientUHID from reset
-        setPatient({
-          name: "",
-          dob: "",
-          age: "",
-          gender: "",
-          permanentAddress: "",
-          area: "",
-          zipcode: "",
-          city: "",
-          state: "",
-          email: "",
-          mobilePhone: "",
-          homePhone: "",
-          bloodGroup: "",
-          spouseName: "",
-          referredBy: "",
-          doctorName: "",
-          doctorFees: "",
-        })
-      } else {
-        const errorText = await response.text()
-        console.error("Error Response:", errorText)
-        
-        try {
-          const errorData = JSON.parse(errorText)
-          console.error("Validation Errors:", errorData)
-          toast.error("Error registering patient: " + JSON.stringify(errorData))
-        } catch (e) {
-          toast.error("Error registering patient. Check console for details.")
-        }
-      }
-    } catch (error) {
-      console.error("Network Error:", error)
-      toast.error("Failed to connect to the server.")
-    }
+  if (!patient.name.trim()) {
+    toast.error("Patient name is required!");
+    return;
   }
 
+  try {
+    const formData = new FormData();
+    Object.keys(patient).forEach((key) => {
+      formData.append(key, patient[key]);
+    });
+
+    const token = localStorage.getItem("access_token");
+
+    // ✅ Use native fetch instead of apiRequest
+    const response = await fetch(`${casualtyBaseUrl}register/`, {
+      method: "POST",
+      body: formData,
+      headers: {
+        Authorization: token,
+        // Don't set Content-Type for FormData - browser will set it automatically
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Patient Registered:", data);
+      toast.success("Patient Registered Successfully!");
+      setPatient({
+        name: "",
+        dob: "",
+        age: "",
+        gender: "",
+        permanentAddress: "",
+        area: "",
+        zipcode: "",
+        city: "",
+        state: "",
+        email: "",
+        mobilePhone: "",
+        homePhone: "",
+        bloodGroup: "",
+        spouseName: "",
+        referredBy: "",
+        doctorName: "",
+        doctorFees: "",
+      });
+    } else {
+      const errorText = await response.text();
+      console.error("Error Response:", errorText);
+      try {
+        const errorData = JSON.parse(errorText);
+        toast.error("Error registering patient: " + JSON.stringify(errorData));
+      } catch (e) {
+        toast.error("Error registering patient. Check console for details.");
+      }
+    }
+  } catch (error) {
+    console.error("Network Error:", error);
+    toast.error("Failed to connect to the server.");
+  }
+};
+
   return (
-    <body>
+    <div>
       <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} closeOnClick pauseOnHover />
 
 
@@ -441,7 +485,7 @@ const PatientRegistrationForm = () => {
           </FormContainer>
         </div>
       </MainContentWrapper>
-    </body>
+    </div>
   )
 }
 

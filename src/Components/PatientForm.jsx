@@ -1,73 +1,200 @@
-// src/components/PatientForm.jsx
-import React from "react";
-import styled from "styled-components";
-import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+"use client"
 
+import React, { useEffect } from "react"
+import { useNavigate, useLocation } from "react-router-dom"
+import styled from "styled-components"
+import axios from "axios"
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+
+// Styled Components
 const Container = styled.div`
   max-width: 1200px;
   margin: auto;
   padding: 30px 20px;
   font-family: 'Poppins', sans-serif;
-
-
-    background: white;
+  background: white;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-
   overflow: hidden;
   margin-bottom: 20px;
-`;
+`
 
-const Header = styled.h2`
-  text-align: center;
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 30px;
+`
+
+const Title = styled.h2`
   font-weight: 600;
   color: #2c3e50;
   font-family: 'Poppins', sans-serif;
+  margin: 0;
+`
+
+const BackButton = styled.button`
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
   font-weight: 600;
-`;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(108, 117, 125, 0.4);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+`
 
 const FormGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
-`;
+`
 
 const InputGroup = styled.div`
   display: flex;
   flex-direction: column;
-`;
+`
 
 const Label = styled.label`
   font-weight: 500;
   margin-bottom: 6px;
-`;
+`
 
 const Input = styled.input`
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
-`;
+`
 
 const Select = styled.select`
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
-`;
+`
 
+const SubmitButton = styled.button`
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+`
+
+const ChipContainer = styled.div`
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+`
+
+const Chip = styled.div`
+  background-color: #d1ecf1;
+  padding: 4px 8px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+`
+
+const ChipRemove = styled.span`
+  margin-left: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #dc3545;
+  
+  &:hover {
+    color: #c82333;
+  }
+`
+
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  border: 1px solid #dee2e6;
+`
+
+const TableHeader = styled.th`
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  font-weight: 600;
+  text-align: left;
+`
+
+const TableCell = styled.td`
+  padding: 10px;
+  border-bottom: 1px solid #dee2e6;
+`
+
+const DeleteButton = styled.button`
+  padding: 5px 10px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  
+  &:hover {
+    background-color: #c82333;
+  }
+`
+
+const TotalsContainer = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 20px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+`
+
+const TotalItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+`
 
 const PatientForm = () => {
-  const casualtyBaseUrl = import.meta.env.VITE_BACKEND_CASUALTY_BASE_URL;
+  const navigate = useNavigate()
+  const location = useLocation()
+  const casualtyBaseUrl = import.meta.env.VITE_BACKEND_CASUALTY_BASE_URL
 
-  const [procedureOptions, setProcedureOptions] = React.useState([]);
-  const [doctorOptions, setDoctorOptions] = React.useState([]);
-  const [selectedProcedures, setSelectedProcedures] = React.useState([]);
-  const [discount, setDiscount] = React.useState("");
-  const [totalAmount, setTotalAmount] = React.useState(0);
-  const [discountedAmount, setDiscountedAmount] = React.useState(0);
+  const [procedureOptions, setProcedureOptions] = React.useState([])
+  const [doctorOptions, setDoctorOptions] = React.useState([])
+  const [selectedProcedures, setSelectedProcedures] = React.useState([])
+  const [discount, setDiscount] = React.useState("")
+  const [totalAmount, setTotalAmount] = React.useState(0)
+  const [discountedAmount, setDiscountedAmount] = React.useState(0)
   const [formData, setFormData] = React.useState({
     name: "",
     erNumber: "",
@@ -79,202 +206,284 @@ const PatientForm = () => {
     gender: "Male",
     dob: new Date().toISOString().split("T")[0],
     address: "",
-  });
+  })
 
-  // Fetch procedures & doctors
+  // apiRequest function - centralized API call logic
+  const apiRequest = async (url, method = "GET", data = null, headers = {}) => {
+    try {
+      const token = localStorage.getItem("access_token")
+      const defaultHeaders = {
+        "Content-Type": "application/json",
+        Authorization: `${token}`,
+      }
+      const config = {
+        method,
+        url,
+        headers: { ...defaultHeaders, ...headers },
+        validateStatus: () => true,
+      }
+
+      if (data && method === "GET") {
+        config.params = data
+      } else if (data && (method === "POST" || method === "PUT")) {
+        config.data = data
+      }
+
+      console.log(`API Request: ${method} ${url}`, { config })
+      const response = await axios(config)
+      console.log(`API Response for ${url}:`, { status: response.status, data: response.data })
+
+      if (response.status >= 200 && response.status < 300) {
+        return { success: true, data: response.data }
+      } else if (response.status === 400) {
+        return {
+          success: false,
+          error: response.data?.message || "Invalid data sent to server.",
+          status: 400,
+          data: response.data,
+        }
+      } else if (response.status === 401) {
+        toast.error("Session expired. Please log in again.")
+        return { success: false, error: "Session expired. Please log in again.", status: 401, data: response.data }
+      } else if (response.status === 403) {
+        return {
+          success: false,
+          error: response.data?.message || "You do not have permission to perform this action.",
+          status: 403,
+          data: response.data,
+        }
+      } else {
+        return {
+          success: false,
+          error: response.data?.message || "Something went wrong. Try again.",
+          status: response.status,
+          data: response.data,
+        }
+      }
+    } catch (error) {
+      console.error("Network or unexpected error in apiRequest:", error)
+      return { success: false, error: "Network error or unexpected issue occurred.", networkError: true }
+    }
+  }
+
+  // Load patient data from URL parameters or location state
+  useEffect(() => {
+    // First check if data was passed via navigation state
+    if (location.state?.patientData) {
+      handleSelectPatient(location.state.patientData)
+      return
+    }
+
+    // Fallback to URL parameters
+    const urlParams = new URLSearchParams(location.search)
+    const patientDataParam = urlParams.get("data")
+    if (patientDataParam) {
+      try {
+        const patientData = JSON.parse(decodeURIComponent(patientDataParam))
+        handleSelectPatient(patientData)
+      } catch (error) {
+        console.error("Error parsing patient data from URL:", error)
+        toast.error("Error loading patient data")
+      }
+    }
+  }, [location])
+
+  // Fetch procedures & doctors, ER/Bill numbers
   React.useEffect(() => {
-    const fetchProcedures = async () => {
-      try {
-        const response = await axios.get(`${casualtyBaseUrl}procedures/`);
-        const data = response.data;
-
-        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-
-        const proceduresWithNumericRates = parsed.map(procedure => ({
+    const fetchInitialData = async () => {
+      // Fetch Procedures
+      const proceduresResponse = await apiRequest(`${casualtyBaseUrl}procedures/`)
+      if (proceduresResponse.success) {
+        const data = proceduresResponse.data
+        const parsed = typeof data === "string" ? JSON.parse(data) : data
+        const proceduresWithNumericRates = parsed.map((procedure) => ({
           ...procedure,
-          rate: parseFloat(procedure.rate) || 0,
-        }));
-
-        setProcedureOptions(proceduresWithNumericRates);
-        console.log("procedures", proceduresWithNumericRates);
-      } catch (error) {
-        console.error("Error fetching procedures:", error);
-        toast.error("Failed to fetch procedures.");
+          rate: Number.parseFloat(procedure.rate) || 0,
+        }))
+        setProcedureOptions(proceduresWithNumericRates)
+        console.log("Fetched and set procedures:", proceduresWithNumericRates)
+      } else {
+        console.error("Error fetching procedures:", proceduresResponse.error)
+        toast.error("Failed to fetch procedures.")
       }
-    };
 
-    const fetchDoctors = async () => {
-      try {
-        const response = await axios.get(`${casualtyBaseUrl}doctors/`);
-        const data = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
-        setDoctorOptions(data);
-      } catch (error) {
-        console.error("Error fetching doctors:", error);
-        toast.error("Failed to fetch doctors.");
+      // Fetch Doctors
+      const doctorsResponse = await apiRequest(`${casualtyBaseUrl}doctors/`)
+      if (doctorsResponse.success) {
+        const data = typeof doctorsResponse.data === "string" ? JSON.parse(doctorsResponse.data) : doctorsResponse.data
+        setDoctorOptions(data)
+        console.log("Fetched and set doctors:", data)
+      } else {
+        console.error("Error fetching doctors:", doctorsResponse.error)
+        toast.error("Failed to fetch doctors.")
       }
-    };
 
-    // Fetch next bill number
-    const fetchBillNumber = async () => {
-      try {
-        const res = await axios.get(`${casualtyBaseUrl}next-bill-number/`);
-        setFormData((prev) => ({ ...prev, billNumber: res.data.billNumber }));
-      } catch (err) {
-        console.error("Error fetching bill number", err);
-        toast.error("Failed to fetch bill number.");
+      // Fetch next bill number (only if ER Number is not already set from a selected patient)
+      if (!formData.billNumber) {
+        const billNumberResponse = await apiRequest(`${casualtyBaseUrl}next-bill-number/`)
+        if (billNumberResponse.success) {
+          setFormData((prev) => ({ ...prev, billNumber: billNumberResponse.data.billNumber }))
+          console.log("Fetched and set bill number:", billNumberResponse.data.billNumber)
+        } else {
+          console.error("Error fetching bill number", billNumberResponse.error)
+          toast.error("Failed to fetch bill number.")
+        }
       }
-    };
+    }
 
-    // Fetch next ER number
-    const fetchERNumber = async () => {
-      try {
-        const res = await axios.get(`${casualtyBaseUrl}next-er-number/`);
-        setFormData((prev) => ({ ...prev, erNumber: res.data.erNumber }));
-      } catch (err) {
-        console.error("Error fetching ER number", err);
-        toast.error("Failed to fetch ER number.");
-      }
-    };
+    fetchInitialData()
+  }, [casualtyBaseUrl, formData.billNumber])
 
-    fetchProcedures();
-    fetchDoctors();
-    fetchBillNumber();
-    fetchERNumber();
-  }, []);
+  // Handler to populate form with selected patient data
+  const handleSelectPatient = (patient) => {
+    // Convert billType string to array for chips
+    const billTypeArray = patient.billType ? patient.billType.split(", ").map((item) => item.trim()) : []
+
+    // Convert procedures to the format expected by selectedProcedures state
+    const procedures = patient.procedures || []
+
+    setFormData({
+      name: patient.name || "",
+      erNumber: patient.erNumber || "",
+      billNumber: patient.billNumber || "",
+      doctorName: patient.doctorName || "",
+      billDate: patient.billDate || new Date().toISOString().split("T")[0],
+      billType: billTypeArray,
+      age: patient.age || "",
+      gender: patient.gender || "Male",
+      dob: patient.dob || new Date().toISOString().split("T")[0],
+      address: patient.address || "",
+    })
+    setSelectedProcedures(procedures)
+    setDiscount(patient.discount || "")
+    setTotalAmount(patient.totalAmount || 0)
+    setDiscountedAmount(patient.discountedAmount || 0)
+
+    toast.success(`Patient ${patient.name} loaded into the form.`)
+  }
 
   // Handle form field changes
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
 
   // Add procedure to bill type
   const handleBillTypeChange = (e) => {
-    const procedureName = e.target.value;
+    const procedureName = e.target.value
+    if (!procedureName) return
 
-    if (!procedureName) return;
-
-    // Check for duplicates
     if (selectedProcedures.find((p) => p.name === procedureName)) {
-      toast.info("This procedure is already added.");
-      return;
+      toast.info("This procedure is already added.")
+      return
     }
 
-    // Find procedure from cached procedureOptions
-    const selectedProcedure = procedureOptions.find(
-      (p) => p.procedure_name === procedureName
-    );
+    const selectedProcedure = procedureOptions.find((p) => p.procedure_name === procedureName)
 
     if (!selectedProcedure) {
-      toast.error("Procedure not found in the list.");
-      return;
+      toast.error("Procedure not found in the list.")
+      return
     }
 
-    const baseRate = parseFloat(selectedProcedure.rate) || 0;
+    const baseRate = Number.parseFloat(selectedProcedure.rate) || 0
 
-    // Add to selected procedures with quantity=1 by default
     setSelectedProcedures((prev) => [
-      ...prev, 
-      { 
-        name: procedureName, 
-        baseRate: baseRate, // Store original rate
-        rate: baseRate,     // This will be the calculated rate (qty * baseRate)
-        quantity: 1         // Default quantity
-      }
-    ]);
+      ...prev,
+      {
+        name: procedureName,
+        baseRate: baseRate,
+        rate: baseRate,
+        quantity: 1,
+      },
+    ])
 
-    // Update billType to show in chips
     setFormData((prev) => ({
       ...prev,
       billType: [...prev.billType, procedureName],
-    }));
-    
-    toast.success(`Added ${procedureName} to the bill`);
-  };
+    }))
+
+    toast.success(`Added ${procedureName} to the bill`)
+  }
 
   // Remove bill type chip
   const removeBillType = (type) => {
     setFormData((prev) => ({
       ...prev,
       billType: prev.billType.filter((t) => t !== type),
-    }));
-    setSelectedProcedures((prev) => prev.filter((p) => p.name !== type));
-    toast.info(`Removed ${type} from the bill`);
-  };
+    }))
+    setSelectedProcedures((prev) => prev.filter((p) => p.name !== type))
+    toast.info(`Removed ${type} from the bill`)
+  }
 
   // Change rate for selected procedure
   const handleRateChange = (index, newRate) => {
-    const updated = [...selectedProcedures];
-    const baseRate = parseFloat(newRate) || 0;
-    updated[index].baseRate = baseRate;
-    // Recalculate the total rate based on quantity
-    updated[index].rate = baseRate * updated[index].quantity;
-    setSelectedProcedures(updated);
-  };
+    const updated = [...selectedProcedures]
+    const baseRate = Number.parseFloat(newRate) || 0
+    updated[index].baseRate = baseRate
+    updated[index].rate = baseRate * updated[index].quantity
+    setSelectedProcedures(updated)
+  }
 
   // Change quantity for selected procedure
-const handleQuantityChange = (index, newQuantity) => {
-  setSelectedProcedures(prev => {
-    const updated = [...prev];
-    const quantity = newQuantity === '' ? '' : parseInt(newQuantity);
+  const handleQuantityChange = (index, newQuantity) => {
+    setSelectedProcedures((prev) => {
+      const updated = [...prev]
+      const quantity = newQuantity === "" ? "" : Number.parseInt(newQuantity)
 
-    updated[index] = {
-      ...updated[index],
-      quantity: quantity,
-      rate:
-        quantity && !isNaN(quantity)
-          ? updated[index].baseRate * quantity
-          : 0,
-    };
+      updated[index] = {
+        ...updated[index],
+        quantity: quantity,
+        rate: quantity && !isNaN(quantity) ? updated[index].baseRate * quantity : 0,
+      }
 
-    return updated;
-  });
-};
+      return updated
+    })
+  }
 
   // Remove procedure from table
   const handleDeleteProcedure = (index) => {
-    const proc = selectedProcedures[index];
-    removeBillType(proc.name);
-  };
+    const proc = selectedProcedures[index]
+    removeBillType(proc.name)
+  }
 
   // Update totals when procedures or discount changes
   React.useEffect(() => {
-    const total = selectedProcedures.reduce((acc, curr) => acc + (parseFloat(curr.rate) || 0), 0);
-    setTotalAmount(total);
+    const total = selectedProcedures.reduce((acc, curr) => acc + (Number.parseFloat(curr.rate) || 0), 0)
+    setTotalAmount(total)
 
     if (discount.toString().includes("%")) {
-      const percent = parseFloat(discount.replace("%", "")) || 0;
-      setDiscountedAmount(total - (percent / 100) * total);
+      const percent = Number.parseFloat(discount.replace("%", "")) || 0
+      setDiscountedAmount(total - (percent / 100) * total)
     } else {
-      const flat = parseFloat(discount) || 0;
-      setDiscountedAmount(total - flat);
+      const flat = Number.parseFloat(discount) || 0
+      setDiscountedAmount(total - flat)
     }
-  }, [selectedProcedures, discount]);
+  }, [selectedProcedures, discount])
 
   // Validate form data
   const validateForm = () => {
     if (!formData.name.trim()) {
-      toast.error("Patient name is required");
-      return false;
-    }
-    
-    if (!formData.doctorName) {
-      toast.error("Doctor name is required");
-      return false;
-    }
-    
-    if (selectedProcedures.length === 0) {
-      toast.error("At least one procedure must be added");
-      return false;
+      toast.error("Patient name is required")
+      return false
     }
 
-    return true;
-  };
+    if (!formData.doctorName) {
+      toast.error("Doctor name is required")
+      return false
+    }
+
+    if (selectedProcedures.length === 0) {
+      toast.error("At least one procedure must be added")
+      return false
+    }
+
+    return true
+  }
 
   // Submit handler
   const handleSubmit = async () => {
-    if (!validateForm()) return;
-    
+    if (!validateForm()) return
+
     try {
       const payload = {
         ...formData,
@@ -283,27 +492,33 @@ const handleQuantityChange = (index, newQuantity) => {
         totalAmount,
         discount,
         discountedAmount,
-      };
+      }
 
-      toast.info("Saving patient data...");
-      
-      const response = await axios.post(`${casualtyBaseUrl}patient/`, payload);
-      setFormData(prev => ({ ...prev, billNumber: response.data.billNumber }));
-      toast.success("Patient data saved successfully!");
-      console.log(response.data);
-      // Print after successful save
-      printBill(payload);
+      toast.info("Saving patient data...")
+
+      const response = await apiRequest(`${casualtyBaseUrl}patient/`, "POST", payload)
+
+      if (response.success) {
+        setFormData((prev) => ({ ...prev, billNumber: response.data.billNumber }))
+        toast.success("Patient data saved successfully!")
+        console.log("Patient data saved successfully:", response.data)
+        printBill(payload)
+      } else {
+        console.error("Error saving patient data:", response.error)
+        toast.error("Failed to save data: " + (response.error || "Unknown error"))
+      }
     } catch (error) {
-      console.error("Error saving patient data:", error);
-      toast.error("Failed to save data: " + (error.response?.data?.message || error.message));
+      console.error("Catch block error during save:", error)
+      toast.error("An unexpected error occurred during patient registration.")
     }
-  };
+  }
 
+  // Print Bill Function
   const printBill = (data) => {
-    const printWindow = window.open("", "_blank");
+    const printWindow = window.open("", "_blank")
     if (!printWindow) {
-      toast.error("Unable to open print window. Please check your popup blocker settings.");
-      return;
+      toast.error("Unable to open print window. Please check your popup blocker settings.")
+      return
     }
 
     const procedureRows = data.procedures
@@ -315,9 +530,9 @@ const handleQuantityChange = (index, newQuantity) => {
             <div style="width: 10%; text-align: center;">${proc.quantity}</div>
             <div style="width: 15%; text-align: right;">${proc.baseRate.toFixed(2)}</div>
             <div style="width: 15%; text-align: right;">${proc.rate.toFixed(2)}</div>
-          </div>`
+          </div>`,
       )
-      .join("");
+      .join("")
 
     printWindow.document.write(`
       <html>
@@ -392,7 +607,7 @@ const handleQuantityChange = (index, newQuantity) => {
 
           <div class="info-row"><div class="info-label">Bill Number:</div><div>${data.billNumber}</div></div>
           <div class="info-row"><div class="info-label">ER Number:</div><div>${data.erNumber}</div></div>
-          <div class="info-row"><div class="info-label">Bill Date:</div><div>${data.billDate} ${data.billTime || ''}</div></div>
+          <div class="info-row"><div class="info-label">Bill Date:</div><div>${data.billDate} ${data.billTime || ""}</div></div>
           <div class="info-row"><div class="info-label">Name:</div><div>${data.name}</div></div>
           <div class="info-row"><div class="info-label">Doctor:</div><div>${data.doctorName}</div></div>
 
@@ -429,16 +644,23 @@ const handleQuantityChange = (index, newQuantity) => {
           </script>
         </body>
       </html>
-    `);
+    `)
 
-    printWindow.document.close();
-  };
+    printWindow.document.close()
+  }
+
+  const handleBackToList = () => {
+    navigate(`${import.meta.env.BASE_URL}/DailyPatientList`)
+  }
 
   return (
     <Container>
       <ToastContainer position="top-right" autoClose={3000} />
-      <h2>ER Form</h2>
-      
+      <Header>
+        <Title>ER Patient Form</Title>
+        <BackButton onClick={handleBackToList}>← Back to Patient List</BackButton>
+      </Header>
+
       <FormGrid>
         <InputGroup>
           <Label>ER Number</Label>
@@ -499,152 +721,111 @@ const handleQuantityChange = (index, newQuantity) => {
                 </option>
               ))}
           </Select>
-          <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: "6px" }}>
+          <ChipContainer>
             {formData.billType.map((type) => (
-              <div
-                key={type}
-                style={{
-                  backgroundColor: "#d1ecf1",
-                  padding: "4px 8px",
-                  borderRadius: "12px",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
+              <Chip key={type}>
                 {type}
-                <span
-                  style={{ marginLeft: 6, cursor: "pointer" }}
-                  onClick={() => removeBillType(type)}
-                >
-                  ×
-                </span>
-              </div>
+                <ChipRemove onClick={() => removeBillType(type)}>×</ChipRemove>
+              </Chip>
             ))}
-          </div>
+          </ChipContainer>
         </InputGroup>
       </FormGrid>
 
-      <button onClick={handleSubmit}>Submit</button>
+      <SubmitButton onClick={handleSubmit}>Submit Patient Data</SubmitButton>
 
       {selectedProcedures.length > 0 && (
         <>
-          <div className="table-responsive mt-4" style={{ marginTop: '20px' }}>
-            <table style={{ 
-              width: '100%', 
-              borderCollapse: 'collapse', 
-              marginTop: '20px',
-              border: '1px solid #dee2e6' 
-            }}>
-              <thead>
-                <tr style={{ backgroundColor: '#f8f9fa' }}>
-                  <th style={{ padding: '12px', borderBottom: '1px solid #dee2e6' }}>Procedure</th>
-                  <th style={{ padding: '12px', borderBottom: '1px solid #dee2e6' }}>Quantity</th>
-                  <th style={{ padding: '12px', borderBottom: '1px solid #dee2e6' }}>Unit Rate (₹)</th>
-                  <th style={{ padding: '12px', borderBottom: '1px solid #dee2e6' }}>Total (₹)</th>
-                  <th style={{ padding: '12px', borderBottom: '1px solid #dee2e6' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedProcedures.map((proc, idx) => (
-                  <tr key={idx}>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #dee2e6' }}>{proc.name}</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #dee2e6' }}>
+          <Table>
+            <thead>
+              <tr>
+                <TableHeader>Procedure</TableHeader>
+                <TableHeader>Quantity</TableHeader>
+                <TableHeader>Unit Rate (₹)</TableHeader>
+                <TableHeader>Total (₹)</TableHeader>
+                <TableHeader>Action</TableHeader>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedProcedures.map((proc, idx) => (
+                <tr key={idx}>
+                  <TableCell>{proc.name}</TableCell>
+                  <TableCell>
                     <Input
                       type="text"
-                      value={proc.quantity === '' ? '' : proc.quantity}
+                      value={proc.quantity === "" ? "" : proc.quantity}
                       onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                      style={{ width: '100%' }}
+                      style={{ width: "100%" }}
                     />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="text"
+                      value={proc.baseRate}
+                      onChange={(e) => handleRateChange(idx, e.target.value)}
+                      style={{ width: "100%" }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="text"
+                      value={proc.rate.toFixed(2)}
+                      readOnly
+                      style={{ width: "100%", backgroundColor: "#f8f9fa" }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <DeleteButton onClick={() => handleDeleteProcedure(idx)}>🗑️ Delete</DeleteButton>
+                  </TableCell>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
 
-                    </td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #dee2e6' }}>
-                      <Input
-                        type="text"
-                        value={proc.baseRate}
-                        onChange={(e) => handleRateChange(idx, e.target.value)}
-                        style={{ width: '100%' }}
-                      />
-                    </td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #dee2e6' }}>
-                      <Input
-                        type="text"
-                        value={proc.rate.toFixed(2)}
-                        readOnly
-                        style={{ width: '100%', backgroundColor: '#f8f9fa' }}
-                      />
-                    </td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #dee2e6' }}>
-                      <button
-                        style={{
-                          padding: '5px 10px',
-                          backgroundColor: '#dc3545',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => handleDeleteProcedure(idx)}
-                      >
-                        🗑️
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* Totals and Discount */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end', 
-              alignItems: 'center', 
-              gap: '20px', 
-              marginTop: '20px' 
-            }}>
-              <div>
-                <Label>Discount</Label>
-                <Input
-                  type="text"
-                  value={discount}
-                  placeholder="Enter amount or percentage (e.g. 100 or 10%)"
-                  onChange={(e) => setDiscount(e.target.value)}
-                  style={{ width: '200px' }}
-                />
-              </div>
-              <div>
-                <Label>Total Amount</Label>
-                <Input 
-                  type="text" 
-                  value={totalAmount.toFixed(2)} 
-                  readOnly 
-                  style={{ width: '150px', backgroundColor: '#f8f9fa' }} 
-                />
-              </div>
-              <div>
-                <Label>Discounted Amount</Label>
-                <Input
-                  type="text"
-                  value={discount ? discountedAmount.toFixed(2) : ""}
-                  placeholder="Discounted amount will appear here"
-                  readOnly
-                  style={{ width: '150px', backgroundColor: '#f8f9fa' }}
-                />
-              </div>
-              <div>
-                <Label>Net Amount</Label>
-                <Input
-                  type="text"
-                  value={(discount ? discountedAmount : totalAmount).toFixed(2)}
-                  readOnly
-                  style={{ width: '150px', backgroundColor: '#f8f9fa', fontWeight: 'bold' }}
-                />
-              </div>
-            </div>
-          </div>
+          <TotalsContainer>
+            <TotalItem>
+              <Label>Discount</Label>
+              <Input
+                type="text"
+                value={discount}
+                placeholder="Enter amount or percentage (e.g. 100 or 10%)"
+                onChange={(e) => setDiscount(e.target.value)}
+                style={{ width: "200px" }}
+              />
+            </TotalItem>
+            <TotalItem>
+              <Label>Total Amount</Label>
+              <Input
+                type="text"
+                value={totalAmount.toFixed(2)}
+                readOnly
+                style={{ width: "150px", backgroundColor: "#f8f9fa" }}
+              />
+            </TotalItem>
+            <TotalItem>
+              <Label>Discounted Amount</Label>
+              <Input
+                type="text"
+                value={discount ? discountedAmount.toFixed(2) : ""}
+                placeholder="Discounted amount will appear here"
+                readOnly
+                style={{ width: "150px", backgroundColor: "#f8f9fa" }}
+              />
+            </TotalItem>
+            <TotalItem>
+              <Label>Net Amount</Label>
+              <Input
+                type="text"
+                value={(discount ? discountedAmount : totalAmount).toFixed(2)}
+                readOnly
+                style={{ width: "150px", backgroundColor: "#f8f9fa", fontWeight: "bold" }}
+              />
+            </TotalItem>
+          </TotalsContainer>
         </>
       )}
     </Container>
-  );
-};
+  )
+}
 
-export default PatientForm;
+export default PatientForm

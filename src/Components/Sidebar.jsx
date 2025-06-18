@@ -178,55 +178,38 @@ const Footer = styled.div`
 
 const Sidebar = ({ onLogout }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 769);
+  const [role, setRole] = useState(localStorage.getItem("role") || "");
   const location = useLocation();
   const navigate = useNavigate();
-
-  const baseUrl = import.meta.env.BASE_URL?.replace(/\/$/, "") || ""; // Remove trailing slash if present
+  const baseUrl = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
   const toggleSidebar = () => setIsOpen(!isOpen);
-  
-  const closeSidebar = () => {
-    if (window.innerWidth < 769) {
-      setIsOpen(false);
-    }
-  };
+  const closeSidebar = () => window.innerWidth < 769 && setIsOpen(false);
 
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 769) {
-        setIsOpen(false);
-      } else {
-        setIsOpen(true);
-      }
-    };
-    
+    const handleResize = () => setIsOpen(window.innerWidth >= 769);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-  
-  // Close sidebar on route change for mobile
+
   useEffect(() => {
-    if (window.innerWidth < 769) {
-      closeSidebar();
-    }
+    closeSidebar();
+    setRole(localStorage.getItem("role") || "");
   }, [location.pathname]);
 
   const handleLogout = () => {
-    // If you have any logout logic (clearing local storage, etc.), add it here
-    if (typeof onLogout === 'function') {
-      onLogout();
-    }
-    
+    localStorage.clear();
     toast.info("Logged out successfully");
     navigate(`${baseUrl}/`);
+    if (onLogout) onLogout();
   };
 
   return (
     <>
-      <ToggleButton onClick={toggleSidebar} aria-label="Toggle navigation">
+      <ToggleButton onClick={toggleSidebar}>
         {isOpen ? <FaTimes /> : <FaBars />}
       </ToggleButton>
-      
+
       <Overlay open={isOpen} onClick={closeSidebar} />
 
       <SidebarContainer open={isOpen}>
@@ -235,46 +218,48 @@ const Sidebar = ({ onLogout }) => {
             <FaClinicMedical />
             <span>ER Dept</span>
           </Logo>
-          
+
           <SidebarList>
-            <SidebarItem active={location.pathname === `${baseUrl}/PatientRegistrationForm`}>
-              <Link to={`${baseUrl}/PatientRegistrationForm`} onClick={closeSidebar}>
-                <FaClipboardList />
-                Registration 
-              </Link>
-            </SidebarItem>
-            
-            <SidebarItem active={location.pathname === `${baseUrl}/PatientForm`}>
-              <Link to={`${baseUrl}/PatientForm`} onClick={closeSidebar}>
-                <FaStethoscope />
-                Casualty Form
-              </Link>
-            </SidebarItem>
-            
-            <SidebarItem active={location.pathname === `${baseUrl}/Dashboard`}>
-              <Link to={`${baseUrl}/Dashboard`} onClick={closeSidebar}>
-                <FaTachometerAlt />
-                Dashboard
-              </Link>
-            </SidebarItem>
-
-            <SidebarItem active={location.pathname === `${baseUrl}/PatientList`}>
-              <Link to={`${baseUrl}/PatientList`} onClick={closeSidebar}>
-                <FaUsers />
-               PatientList
-              </Link>
-            </SidebarItem>
-
-            <SidebarItem active={location.pathname === `${baseUrl}/PrintBill`}>
-              <Link to={`${baseUrl}/PrintBill`} onClick={closeSidebar}>
-                <FaPrint />
-               PrintBill
-              </Link>
-            </SidebarItem>
-
+            {role === "ER Admin" ? (
+              <>
+                <SidebarItem active={location.pathname === `${baseUrl}/Dashboard`}>
+                  <Link to={`${baseUrl}/Dashboard`} onClick={closeSidebar}>
+                    <FaTachometerAlt />
+                    Dashboard
+                  </Link>
+                </SidebarItem>
+                <SidebarItem active={location.pathname === `${baseUrl}/PatientList`}>
+                  <Link to={`${baseUrl}/PatientList`} onClick={closeSidebar}>
+                    <FaUsers />
+                    PatientList
+                  </Link>
+                </SidebarItem>
+              </>
+            ) : (
+              <>
+                <SidebarItem active={location.pathname === `${baseUrl}/PatientRegistrationForm`}>
+                  <Link to={`${baseUrl}/PatientRegistrationForm`} onClick={closeSidebar}>
+                    <FaClipboardList />
+                    Registration
+                  </Link>
+                </SidebarItem>
+                <SidebarItem active={location.pathname === `${baseUrl}/PatientForm`}>
+                  <Link to={`${baseUrl}/PatientForm`} onClick={closeSidebar}>
+                    <FaStethoscope />
+                    Casualty Form
+                  </Link>
+                </SidebarItem>
+                <SidebarItem active={location.pathname === `${baseUrl}/PrintBill`}>
+                  <Link to={`${baseUrl}/PrintBill`} onClick={closeSidebar}>
+                    <FaPrint />
+                    Print Bill
+                  </Link>
+                </SidebarItem>
+              </>
+            )}
           </SidebarList>
         </div>
-        
+
         <div>
           <Divider />
           <LogoutContainer>

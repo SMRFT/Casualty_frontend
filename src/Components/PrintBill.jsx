@@ -1,194 +1,102 @@
-import React, { useState, useEffect } from "react";
+import axios from 'axios'; // Import axios
+import { useState, useEffect } from "react";
 import styled from "styled-components";
-import { BsPerson } from "react-icons/bs";
+import { BsPerson } from "react-icons/bs"; // Assuming this is where BsPerson comes from
 
+// Styled Components (assuming these are defined elsewhere or will be moved here)
 const Container = styled.div`
-  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   min-height: 100vh;
-  padding: 20px;
+  padding: 2rem;
+  background-color: #f0f2f5;
 `;
 
 const MainWrapper = styled.div`
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
 `;
 
 const Header = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  padding: 24px;
-  margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 `;
 
 const HeaderLeft = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
-`;
-
-const HeaderTitle = styled.h1`
-  margin: 0;
-  font-size: 24px;
-  font-weight: bold;
-  color: #333;
+  h2 {
+    color: #1a202c;
+    font-weight: 700;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 `;
 
 const HeaderSubtitle = styled.p`
-  margin: 4px 0 0 0;
-  color: #666;
-  font-size: 14px;
+  color: #718096;
+  font-size: 1rem;
+  margin: 0;
 `;
 
 const DatePickerWrapper = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: #f5f5f5;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-`;
+  gap: 0.75rem;
 
-const DateInput = styled.input`
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #333;
-  font-weight: 500;
-  font-size: 14px;
-`;
-
-const CardsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-  padding: 16px;
-`;
-
-const PatientCard = styled.div`
-  border: 1px solid #ccc;
-  border-radius: 20px;
-  background-color: #fff;
-  width: 100%;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  label {
+    font-size: 1rem;
+    color: #4a5568;
+    font-weight: 500;
   }
 `;
 
-const PatientHeader = styled.div`
-  background: ${props => props.headerColor || 'linear-gradient(135deg, #533527, #AE8775)'};
-  color: white;
-  padding: 20px;
-  position: relative;
-  border-radius: 20px 20px 0px 0px;
-`;
+const DateInput = styled.input`
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  font-size: 1rem;
+  width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  background: white;
 
-const PatientIcon = styled.div`
-  position: absolute;
-  top: 12px;
-  left: 20px;
-  font-size: 25px;
-`;
-
-const PatientName = styled.h3`
-  margin: 0 0 8px 0;
-  font-size: 20px;
-  font-weight: 600;
-  padding-left: 32px;
-`;
-
-const ERNumber = styled.p`
-  margin: 0;
-  font-size: 14px;
-  opacity: 0.9;
-`;
-
-const PatientDetails = styled.div`
-  padding: 24px;
-`;
-
-const DetailRow = styled.div`
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-  font-size: 14px;
-`;
-
-const DetailIcon = styled.div`
-  margin-right: 12px;
-  font-size: 16px;
-  color: #666;
-  width: 20px;
-`;
-
-const DetailLabel = styled.span`
-  color: #666;
-  font-weight: 500;
-  margin-right: 8px;
-`;
-
-const DetailValue = styled.span`
-  color: #333;
-  font-weight: 500;
-`;
-
-const AmountSection = styled.div`
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 16px;
-  margin: 20px 0;
-  text-align: right;
-`;
-
-const AmountLabel = styled.div`
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 4px;
-`;
-
-const AmountValue = styled.div`
-  font-size: 24px;
-  font-weight: bold;
-  color: #059669;
-`;
-
-const PrintButton = styled.button`
-  width: 100%;
-  background: #533527;
-  color: white;
-  border: none;
-  padding: 14px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: background 0.2s ease;
-
-  &:active {
-    transform: translateY(1px);
+  &:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
   }
 `;
 
 const LoadingWrapper = styled.div`
-  text-align: center;
-  padding: 48px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #4a5568;
 `;
 
 const Spinner = styled.div`
-  display: inline-block;
-  width: 32px;
-  height: 32px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #4f46e5;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-top: 4px solid #4f46e5;
   border-radius: 50%;
+  width: 40px;
+  height: 40px;
   animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
 
   @keyframes spin {
     0% { transform: rotate(0deg); }
@@ -197,64 +105,186 @@ const Spinner = styled.div`
 `;
 
 const LoadingText = styled.p`
-  margin-top: 16px;
-  color: #666;
+  font-size: 1.1rem;
+  color: #4a5568;
 `;
 
 const ErrorWrapper = styled.div`
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
+  background: #fee2e2;
+  border: 1px solid #ef4444;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 `;
 
 const ErrorContent = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
+  color: #dc2626;
+  font-weight: 500;
 `;
 
 const ErrorText = styled.p`
   margin: 0;
-  color: #dc2626;
+  font-size: 1rem;
 `;
 
 const RetryButton = styled.button`
-  margin-top: 8px;
-  background: none;
+  background-color: #ef4444;
+  color: white;
+  padding: 0.75rem 1.5rem;
   border: none;
-  color: #dc2626;
-  text-decoration: underline;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
 
   &:hover {
-    color: #b91c1c;
+    background-color: #dc2626;
   }
 `;
 
 const EmptyWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background: #f8fafc;
+  border-radius: 16px;
+  margin-top: 2rem;
+  padding: 2rem;
   text-align: center;
-  padding: 48px 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 `;
 
 const EmptyIcon = styled.div`
-  font-size: 64px;
-  color: #ccc;
-  margin-bottom: 16px;
+  font-size: 3rem;
+  margin-bottom: 1rem;
 `;
 
 const EmptyTitle = styled.h3`
-  font-size: 18px;
-  font-weight: 500;
-  color: #666;
-  margin-bottom: 8px;
+  font-size: 1.5rem;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
 `;
 
 const EmptyText = styled.p`
-  color: #999;
+  color: #718096;
+  font-size: 1rem;
+`;
+
+const CardsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+`;
+
+const PatientCard = styled.div`
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border: 1px solid #e2e8f0;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const PatientHeader = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+`;
+
+const PatientIcon = styled.div`
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: white;
+  border-radius: 50%;
+  padding: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  font-size: 1.2rem;
+`;
+
+const PatientName = styled.h3`
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #1a202c;
   margin: 0;
+  flex-grow: 1;
+`;
+
+const ERNumber = styled.span`
+  background-color: #edf2f7;
+  color: #4a5568;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+`;
+
+const PatientDetails = styled.div`
+  margin-top: 1rem;
+`;
+
+const DetailRow = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+  color: #4a5568;
+`;
+
+const DetailIcon = styled.span`
+  margin-right: 0.75rem;
+  font-size: 1.1rem;
+  color: #6366f1;
+`;
+
+const DetailLabel = styled.span`
+  font-weight: 500;
+  min-width: 70px;
+`;
+
+const DetailValue = styled.span`
+  font-weight: 400;
+  color: #2d3748;
+`;
+
+const PrintButton = styled.button`
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  width: 100%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 5px 15px rgba(79, 70, 229, 0.3);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+  }
 `;
 
 const ERPatientsBilling = () => {
@@ -262,64 +292,66 @@ const ERPatientsBilling = () => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [billDateTime, setBillDateTime] = useState(null);
+  // const [billDateTime, setBillDateTime] = useState(null); // This state isn't used in the provided code
 
   const casualtyBaseUrl = import.meta.env.VITE_BACKEND_CASUALTY_BASE_URL;
 
-  // Color options for patient cards
-  const cardColors = [
-    'linear-gradient(135deg, #4f46e5, #7c3aed)', // Blue to Purple
-    'linear-gradient(135deg, #059669, #047857)', // Green
-    'linear-gradient(135deg, #dc2626, #b91c1c)', // Red
-    'linear-gradient(135deg, #d97706, #b45309)', // Orange
-    'linear-gradient(135deg, #7c2d12, #92400e)', // Brown
-    'linear-gradient(135deg, #1f2937, #374151)', // Gray
-  ];
+  // apiRequest function copied from Dashboard
+  const apiRequest = async (url, method = 'GET', data = null, headers = {}) => {
+    try {
+      const token = localStorage.getItem("access_token");
+
+      const defaultHeaders = {
+        "Content-Type": "application/json",
+        "Authorization": token,
+      };
+
+      const config = {
+        method,
+        url,
+        headers: { ...defaultHeaders, ...headers },
+        validateStatus: () => true, // Ensure Axios doesn't throw for non-2xx codes
+      };
+
+      if (data && (method === 'POST' || method === 'PUT' || method === 'GET')) { // Added GET for data in body if needed, though usually GET doesn't have a body
+        config.data = data;
+      }
+
+      const response = await axios(config);
+
+      if (response.status === 200) {
+        return { success: true, data: response.data };
+      } else if (response.status === 400) {
+        return { success: false, error: 'Invalid data sent to server.', status: 400, data: response.data };
+      } else if (response.status === 401) {
+        return { success: false, error: 'Session expired. Please log in again.', status: 401, data: response.data };
+      } else {
+        return { success: false, error: 'Something went wrong. Try again.', status: response.status, data: response.data };
+      }
+    } catch (error) {
+      console.error('Network or unexpected error:', error);
+      return { success: false, error: 'Network error or unexpected issue occurred.', networkError: true };
+    }
+  };
+
 
   const fetchPatients = async (date) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const formattedDate = new Date(date).toISOString().split("T")[0];
       const url = `${casualtyBaseUrl}printbill/?date=${formattedDate}`;
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-        try {
-          const errorText = await response.text();
-          if (errorText.includes('<!doctype') || errorText.includes('<!DOCTYPE')) {
-            errorMessage = `Server returned HTML error page instead of JSON. Status: ${response.status}`;
-          } else {
-            errorMessage += ` - ${errorText}`;
-          }
-        } catch (e) {
-          console.log('Could not read error response');
-        }
-        throw new Error(errorMessage);
+
+      // Use apiRequest instead of fetch
+      const response = await apiRequest(url, 'GET');
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch patient data');
       }
-      
-      const contentType = response.headers.get('content-type');
-      
-      if (!contentType || !contentType.includes('application/json')) {
-        const responseText = await response.text();
-        if (responseText.includes('<!doctype') || responseText.includes('<!DOCTYPE')) {
-          throw new Error('Server returned HTML page instead of JSON data. Check if the API endpoint exists and is correctly configured.');
-        } else {
-          throw new Error(`Expected JSON response but got: ${contentType || 'unknown content type'}`);
-        }
-      }
-      
-      const data = await response.json();
-      
+
+      const data = response.data;
+
       if (Array.isArray(data)) {
         setPatients(data);
       } else if (data && typeof data === 'object') {
@@ -327,7 +359,7 @@ const ERPatientsBilling = () => {
       } else {
         setPatients([]);
       }
-      
+
     } catch (error) {
       console.error("Error fetching patient data:", error);
       setError(error.message);
@@ -353,22 +385,30 @@ const ERPatientsBilling = () => {
   const parseBillType = (billTypeString) => {
     try {
       if (!billTypeString) return [];
-      
+
       // Handle if it's already an array
       if (Array.isArray(billTypeString)) {
         return billTypeString;
       }
-      
-      // Parse JSON string
-      const parsed = JSON.parse(billTypeString);
-      
+
+      // Try to parse the JSON string. Handle potential double-escaped strings
+      let cleanedBillType = billTypeString;
+      // Remove outer quotes if they exist
+      if (cleanedBillType.startsWith('"') && cleanedBillType.endsWith('"')) {
+        cleanedBillType = cleanedBillType.slice(1, -1);
+      }
+      // Unescape the JSON string
+      cleanedBillType = cleanedBillType.replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+
+      const parsed = JSON.parse(cleanedBillType);
+
       // Ensure it's an array
       if (Array.isArray(parsed)) {
         return parsed;
       } else if (parsed && typeof parsed === 'object') {
         return [parsed];
       }
-      
+
       return [];
     } catch (e) {
       console.error('Error parsing billType:', e, billTypeString);
@@ -376,6 +416,7 @@ const ERPatientsBilling = () => {
     }
   };
 
+  // The getBillType function is not used in the render, but keeping it for completeness if needed elsewhere
   const getBillType = (patient) => {
     const billItems = parseBillType(patient.billType || '[]');
     if (billItems.length > 0) {
@@ -387,10 +428,10 @@ const ERPatientsBilling = () => {
   const handlePrint = (patient) => {
     const billItems = parseBillType(patient.billType || '[]');
     const printDate = formatDate(patient.billDate);
-    
+
     console.log('Patient data for printing:', patient);
     console.log('Parsed bill items:', billItems);
-    
+
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <html>
@@ -507,7 +548,7 @@ const ERPatientsBilling = () => {
                 <span>Bill Number</span>
                 <span>: ${patient.billNumber || 'N/A'}</span>
               </div>
-              
+
               <div class="bill-row">
                 <span>Bill Date</span>
                 <span>: ${printDate}</span>
@@ -557,7 +598,7 @@ const ERPatientsBilling = () => {
                 </div>
 
               </div>
-              
+
               <div class="net-amount">
                 <div style="text-align: right;">
                   <span>Net Amount</span>
@@ -637,31 +678,33 @@ const ERPatientsBilling = () => {
         {!loading && patients.length > 0 && (
           <CardsGrid>
             {patients.map((patient, index) => {
-              const billItems = parseBillType(patient.billType || '[]');
-              const cardColor = cardColors[index % cardColors.length];
+              // The cardColors array and its usage was in the original code, but it's not being used for styling the PatientCard itself.
+              // If you intend to use it for dynamic styling, you would need to pass it as a prop to PatientCard, e.g.,
+              // const cardColor = cardColors[index % cardColors.length];
+              // <PatientCard color={cardColor}>
+              // and then in PatientCard styled component: background: ${(props) => props.color || 'white'};
               
               return (
-               <PatientCard key={patient._id || index}>
-                <PatientHeader>
-                  <PatientIcon><BsPerson /></PatientIcon>
-                  <PatientName>{patient.name || 'Unknown'}</PatientName>
-                  <ERNumber>Bill No : {patient.billNumber || patient.opNumber || 'N/A'}</ERNumber>
-                </PatientHeader>
+                <PatientCard key={patient._id || index}>
+                  <PatientHeader>
+                    <PatientIcon><BsPerson /></PatientIcon>
+                    <PatientName>{patient.name || 'Unknown'}</PatientName>
+                    <ERNumber>Bill No : {patient.billNumber || patient.opNumber || 'N/A'}</ERNumber>
+                  </PatientHeader>
 
-                  
                   <PatientDetails>
                     <DetailRow>
                       <DetailIcon>🩺</DetailIcon>
                       <DetailLabel>Doctor:</DetailLabel>
                       <DetailValue>{patient.doctorName || 'N/A'}</DetailValue>
                     </DetailRow>
-                    
+
                     <DetailRow>
                       <DetailIcon>📅</DetailIcon>
                       <DetailLabel>Date:</DetailLabel>
                       <DetailValue>{formatDate(patient.billDate)}</DetailValue>
                     </DetailRow>
-              
+
                     <PrintButton onClick={() => handlePrint(patient)}>
                       Print Bill
                     </PrintButton>
