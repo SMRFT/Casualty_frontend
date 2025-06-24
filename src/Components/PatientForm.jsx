@@ -86,7 +86,7 @@ const Select = styled.select`
 `
 
 const SubmitButton = styled.button`
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #5C403C;);
   color: white;
   padding: 12px 30px;
   border: none;
@@ -95,11 +95,11 @@ const SubmitButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+ 
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    
   }
   
   &:active {
@@ -201,7 +201,7 @@ const PatientForm = () => {
     billNumber: "",
     doctorName: "",
     billDate: new Date().toISOString().split("T")[0],
-    billType: [],
+    billType: [], // This will now store JSON objects with quantity, unitRate, amount
     age: "",
     gender: "Male",
     dob: new Date().toISOString().split("T")[0],
@@ -336,8 +336,21 @@ const PatientForm = () => {
 
   // Handler to populate form with selected patient data
   const handleSelectPatient = (patient) => {
-    // Convert billType string to array for chips
-    const billTypeArray = patient.billType ? patient.billType.split(", ").map((item) => item.trim()) : []
+    // Handle billType - if it's a string, convert to array, if it's already JSON array, use as is
+    let billTypeArray = []
+    if (typeof patient.billType === "string") {
+      // Legacy format - convert string to JSON objects
+      const billTypeNames = patient.billType.split(", ").map((item) => item.trim())
+      billTypeArray = billTypeNames.map((name) => ({
+        name: name,
+        quantity: 1,
+        unitRate: 0,
+        amount: 0,
+      }))
+    } else if (Array.isArray(patient.billType)) {
+      // New JSON format
+      billTypeArray = patient.billType
+    }
 
     // Convert procedures to the format expected by selectedProcedures state
     const procedures = patient.procedures || []
@@ -387,19 +400,26 @@ const PatientForm = () => {
 
     const baseRate = Number.parseFloat(selectedProcedure.rate) || 0
 
-    setSelectedProcedures((prev) => [
-      ...prev,
-      {
-        name: procedureName,
-        baseRate: baseRate,
-        rate: baseRate,
-        quantity: 1,
-      },
-    ])
+    const newProcedure = {
+      name: procedureName,
+      baseRate: baseRate,
+      rate: baseRate,
+      quantity: 1,
+    }
+
+    setSelectedProcedures((prev) => [...prev, newProcedure])
+
+    // Add to billType as JSON object
+    const billTypeItem = {
+      name: procedureName,
+      quantity: 1,
+      unitRate: baseRate,
+      amount: baseRate,
+    }
 
     setFormData((prev) => ({
       ...prev,
-      billType: [...prev.billType, procedureName],
+      billType: [...prev.billType, billTypeItem],
     }))
 
     toast.success(`Added ${procedureName} to the bill`)
@@ -409,7 +429,7 @@ const PatientForm = () => {
   const removeBillType = (type) => {
     setFormData((prev) => ({
       ...prev,
-      billType: prev.billType.filter((t) => t !== type),
+      billType: prev.billType.filter((item) => item.name !== type),
     }))
     setSelectedProcedures((prev) => prev.filter((p) => p.name !== type))
     toast.info(`Removed ${type} from the bill`)
@@ -422,6 +442,20 @@ const PatientForm = () => {
     updated[index].baseRate = baseRate
     updated[index].rate = baseRate * updated[index].quantity
     setSelectedProcedures(updated)
+
+    // Update billType JSON data
+    setFormData((prev) => {
+      const updatedBillType = [...prev.billType]
+      const billTypeIndex = updatedBillType.findIndex((item) => item.name === updated[index].name)
+      if (billTypeIndex !== -1) {
+        updatedBillType[billTypeIndex] = {
+          ...updatedBillType[billTypeIndex],
+          unitRate: baseRate,
+          amount: baseRate * updatedBillType[billTypeIndex].quantity,
+        }
+      }
+      return { ...prev, billType: updatedBillType }
+    })
   }
 
   // Change quantity for selected procedure
@@ -435,6 +469,20 @@ const PatientForm = () => {
         quantity: quantity,
         rate: quantity && !isNaN(quantity) ? updated[index].baseRate * quantity : 0,
       }
+
+      // Update billType JSON data
+      setFormData((prevForm) => {
+        const updatedBillType = [...prevForm.billType]
+        const billTypeIndex = updatedBillType.findIndex((item) => item.name === updated[index].name)
+        if (billTypeIndex !== -1) {
+          updatedBillType[billTypeIndex] = {
+            ...updatedBillType[billTypeIndex],
+            quantity: quantity && !isNaN(quantity) ? quantity : 0,
+            amount: quantity && !isNaN(quantity) ? updatedBillType[billTypeIndex].unitRate * quantity : 0,
+          }
+        }
+        return { ...prevForm, billType: updatedBillType }
+      })
 
       return updated
     })
@@ -487,7 +535,7 @@ const PatientForm = () => {
     try {
       const payload = {
         ...formData,
-        billType: selectedProcedures.map((p) => p.name).join(", "),
+        // billType is now already in JSON format with quantity, unitRate, amount
         procedures: selectedProcedures,
         totalAmount,
         discount,
@@ -502,6 +550,7 @@ const PatientForm = () => {
         setFormData((prev) => ({ ...prev, billNumber: response.data.billNumber }))
         toast.success("Patient data saved successfully!")
         console.log("Patient data saved successfully:", response.data)
+        console.log("BillType JSON data:", payload.billType)
         printBill(payload)
       } else {
         console.error("Error saving patient data:", response.error)
@@ -714,7 +763,7 @@ const PatientForm = () => {
           <Select onChange={handleBillTypeChange}>
             <option value="">Select Procedure</option>
             {procedureOptions
-              .filter((p) => !formData.billType.includes(p.procedure_name))
+              .filter((p) => !formData.billType.some((item) => item.name === p.procedure_name))
               .map((item) => (
                 <option key={item._id?.$oid || item._id} value={item.procedure_name}>
                   {item.procedure_name}
@@ -722,10 +771,10 @@ const PatientForm = () => {
               ))}
           </Select>
           <ChipContainer>
-            {formData.billType.map((type) => (
-              <Chip key={type}>
-                {type}
-                <ChipRemove onClick={() => removeBillType(type)}>×</ChipRemove>
+            {formData.billType.map((item) => (
+              <Chip key={item.name}>
+                {item.name}
+                <ChipRemove onClick={() => removeBillType(item.name)}>×</ChipRemove>
               </Chip>
             ))}
           </ChipContainer>

@@ -35,7 +35,7 @@ const ListContainer = styled.div`
   max-width: 1400px;
   margin: 20px auto;
   padding: 30px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #A47864 0%, #F8F6F2 100%);
   border-radius: 20px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   position: relative;
@@ -199,7 +199,7 @@ const CardHeader = styled.div`
 `
 
 const ERNumber = styled.div`
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #A47864 0%, #F8F6F2 100%);;
   color: white;
   padding: 8px 16px;
   border-radius: 25px;
@@ -278,7 +278,7 @@ const NoDataMessage = styled.div`
   color: white;
   padding: 60px 20px;
   font-size: 1.2rem;
-  background: rgba(255, 255, 255, 0.1);
+  background:#5C403C;
   border-radius: 20px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);

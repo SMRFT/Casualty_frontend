@@ -243,8 +243,8 @@ const Sidebar = ({ onLogout }) => {
                     Registration
                   </Link>
                 </SidebarItem>
-                <SidebarItem active={location.pathname === `${baseUrl}/PatientForm`}>
-                  <Link to={`${baseUrl}/PatientForm`} onClick={closeSidebar}>
+                <SidebarItem active={location.pathname === `${baseUrl}/DailyPatientList`}>
+                  <Link to={`${baseUrl}/DailyPatientList`} onClick={closeSidebar}>
                     <FaStethoscope />
                     Casualty Form
                   </Link>
